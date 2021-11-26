@@ -198,7 +198,18 @@ window.onload = function init(){
     // When the user toggle change color when hit corner, reset the variable to allow that animation happen
 
     toggle_color_change.onclick = function(e) {
-        changeColorOn = changeColorOn ? false : true;
+        if(changeColorOn){
+            changeColorOn = false;
+            toggle_color_change.classList.add("changeColorOff");
+            toggle_color_change.classList.remove("changeColorOn");
+            toggle_color_change.innerText = "Change color when hit corner: Off";
+        }
+        else{
+            changeColorOn = true;
+            toggle_color_change.classList.add("changeColorOn");
+            toggle_color_change.classList.remove("changeColorOff"); 
+            toggle_color_change.innerText = "Change color when hit corner: On";
+        }
     }
     // When the user select different number of sub division, change the value
     sliderRec.onchange = function(e) {
