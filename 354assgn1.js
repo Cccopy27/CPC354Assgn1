@@ -19,10 +19,13 @@ var colorList = [];
 // rotate var
 var theta = 0.0;
 var rotateSpeed = 0.01;
+var oriRotateSpeed = 0.01;
+
 var thetaLoc;
 var direction = true;
 var count = 0;
 var canRotate = true;
+var keepRotate = false;
 
 // animation var
 var animationFrameId;
@@ -37,6 +40,7 @@ var canScale = false;
 var transLoc;
 var trans = [0,0];
 var changeDirection = false;
+var oriTranSpeed = 0.005;
 var speedX = 0.005;
 var speedY = 0.005;
 var canXgoLeft = false;
@@ -68,6 +72,7 @@ var toggle_color_change;
 var ratio;
 var ratioLoc;
 
+var currLoc;
 window.onload = function init(){
 
     //...........................................................
@@ -112,6 +117,13 @@ window.onload = function init(){
 
         // right point
         vec3(0.4165, -0.2405,  0.3333)
+    ];
+
+    // currLoc
+    currLoc = [
+        [vertices[1][0],vertices[1][1]],
+        [vertices[2][0],vertices[2][1]],
+        [vertices[3][0],vertices[3][1]]
     ];
 
     // array to store different color combinations
@@ -224,8 +236,8 @@ window.onload = function init(){
 
     // When the user select different rotation speed, change the value
     sliderRot.onchange = function(e) {
-        rotateSpeed = 0.01;
-        rotateSpeed += parseInt(e.target.value) * 0.005 ;
+        rotateSpeed = oriRotateSpeed;
+        rotateSpeed += parseInt(e.target.value) * oriRotateSpeed ;
     };
 
     // update UI
@@ -235,8 +247,8 @@ window.onload = function init(){
 
      // When the user select different transition speed, change the value
     sliderTrans.onchange = function(e) {
-        speedX = speedY = 0.005;
-        var speedExtra = parseInt(e.target.value) * 0.002;
+        speedX = speedY = oriTranSpeed;
+        var speedExtra = parseInt(e.target.value) * oriTranSpeed;
         speedX += speedExtra;
         speedY = speedX;
     };
@@ -271,8 +283,6 @@ window.onload = function init(){
 }
 
 function transTriangle(){
-
-    // speedX *= 1.633;
     // object havent reach upper side of canvas
     if(trans[1] + vertices[1][1]*scale[0] < 1 &&
       // object havent reach down side of canvas
@@ -283,6 +293,14 @@ function transTriangle(){
       (trans[0] + vertices[2][0]*scale[0])/ratio > -1){
         trans[0] += speedX;
         trans[1] += speedY;
+
+        // Keep track all 3 point of triangle
+        for(var i = 0; i < 3; i++){
+            for(var j = 0; j < 2; j++){
+                currLoc[i][j] += j==0 ? speedX : speedY;
+            }
+        }
+
     }
     else{
         // Object should change direction
@@ -362,6 +380,48 @@ function transTriangle(){
 
 }
 
+// Rotate shape function
+function rotate(){
+    theta += (direction ? -rotateSpeed: rotateSpeed);
+
+     // reset the theta properties
+     gl.uniform1f(thetaLoc, theta);
+    // Change the direction of rotation after reach 180 degree
+    // after rotate right for 180 degree
+    if(theta >= Math.PI){
+            direction = true;
+            count++;
+    }
+    // after rotate left for 180 degree
+    else if(theta <= -Math.PI){
+            direction = false;
+            count++;
+    }
+    // Stop the rotation when the triagle return to its original orientation after finished rotate left and right
+    if(count == 2 && theta <= rotateSpeed && !keepRotate ){
+        keepRotate = true;
+        canRotate = false;
+        canScale = true;
+     }
+    
+    
+    // console.log(theta);
+}
+
+
+// function to handle colorChange
+function changeColor(){
+    // get upper limit of the color combination
+    var size  = colorList.length;
+    colors=[];
+    // rotation of each color combination
+    currentColorNumber = currentColorNumber < size-1 ? currentColorNumber+1 : 0;
+    // change base color
+    baseColors = colorList[currentColorNumber];
+    // new triangle with new color
+    triangleDivision(vertices);
+}
+
 function scaleTriangle(){
     // if scale havent reach suitable size
     if(scale[0]<1.5){
@@ -370,6 +430,12 @@ function scaleTriangle(){
     }
     // scale reach suitable size
     else{
+        // keep track latest position of three point
+        for(var i = 0; i < 3; i++){
+            for(var j = 0; j < 2; j++){
+                currLoc[i][j] *= j==0 ? scale[0]/ratio : scale[0];
+            }
+        }
         canScale = false;
         canTrans = true;
     }
@@ -444,45 +510,7 @@ function triangleDivision(vertices){
     gl.vertexAttribPointer( positionLoc, 3, gl.FLOAT, false, 0, 0 );
 }
 
-// Rotate shape function
-function rotate(){
-    theta += (direction ? -rotateSpeed: rotateSpeed);
-    
-    // Change the direction of rotation after reach 180 degree
-    // after rotate right for 180 degree
-    if(theta >= Math.PI){
-            direction = true;
-            count++;
-    }
-    // after rotate left for 180 degree
-    else if(theta <= -Math.PI){
-            direction = false;
-            count++;
-    }
 
-    // Stop the rotation when the triagle return to its original orientation after finished rotate left and right
-    if(count == 2 && theta <= 0){
-        canRotate = false;
-        canScale = true;
-     }
-    
-     // reset the theta properties
-    gl.uniform1f(thetaLoc, theta);
-}
-
-
-// function to handle colorChange
-function changeColor(){
-    // get upper limit of the color combination
-    var size  = colorList.length;
-    colors=[];
-    // rotation of each color combination
-    currentColorNumber = currentColorNumber < size-1 ? currentColorNumber+1 : 0;
-    // change base color
-    baseColors = colorList[currentColorNumber];
-    // new triangle with new color
-    triangleDivision(vertices);
-}
 
 
 
@@ -497,18 +525,21 @@ function render(){
 
     // start rotate
     if(!isPaused && canRotate && !canScale && !canTrans){
-        transTriangle();
+        // transTriangle();
 
-        // rotate();
+        rotate();
     }
     // start scaling 
     else if(!isPaused && !canRotate && canScale && !canTrans){
-        // scaleTriangle();
+        scaleTriangle();
     }
     // start transition
     else if(!isPaused && !canScale && !canRotate  && canTrans){
-        // transTriangle();
+        transTriangle();
     }
+    // if(!isPaused && canTrans && keepRotate){
+    //     rotate();
+    // }
     // loop
     requestAnimationFrame(render);
 }
