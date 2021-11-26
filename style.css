@@ -23,14 +23,19 @@ button.start:hover, button.reset:hover{
     color: white;
 }
 button{
+    box-shadow: rgba(0, 0, 0, 0.25) 0px 54px 55px, rgba(0, 0, 0, 0.12) 0px -12px 30px, rgba(0, 0, 0, 0.12) 0px 4px 6px, rgba(0, 0, 0, 0.17) 0px 12px 13px, rgba(0, 0, 0, 0.09) 0px -3px 5px;
     font-size: 15px;
     text-decoration: none;
     border-radius: 8rem;
-    border: 1px solid black;
+    border: 0.5px solid black;
 
     width: 100px;
     height: 50;
     margin: 20px;
+}
+
+button:hover{
+    border: 0.5px solid rgb(110, 109, 109);
 }
 .slidercontainer{
     width: 100%;
@@ -83,3 +88,21 @@ button{
     width: 150px;
 }
 
+.colorChangeBtn{
+    width: 150px;
+    height: 60px;
+}
+
+button.changeColorOn{
+    background-color: rgb(55, 226, 55);
+}
+
+button.changeColorOff{
+    background-color: red;
+    color: white;
+}
+
+.colorChange{
+    margin-top: 20px;
+    text-align: center;
+}
