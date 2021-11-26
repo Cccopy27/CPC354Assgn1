@@ -5,7 +5,6 @@ var canvas;
 var gl;
 var program;
 
-// triangle division var
 var positions = [];
 var colors = [];
 var numTimesToSubdivide = 0;
@@ -14,7 +13,8 @@ var cBuffer;
 var vBuffer;
 var colorLoc;
 var positionLoc;
-var baseColors=[];
+var baseColors = [];
+var colorList = [];
 
 // rotate var
 var theta = 0.0;
@@ -45,6 +45,8 @@ var canYgoDown= false;
 var canYgoUp = true;
 var canTrans = false;
 
+// change color when hit corner var
+var changeColorOn = true;
 
 // User interface
 var sliderRec;
@@ -57,6 +59,7 @@ var slide_rot;
 var slide_trans;
 var color_menu;
 var color_chose;
+var toggle_color_change;
 
 // Special var to notice
 // If the canvas is not square, we need to recalculate the ratio for it as it is not 1: 1, we calculate it by using width / height to get the ratio
@@ -82,6 +85,7 @@ window.onload = function init(){
     slide_trans = document.querySelector(".slide_trans");
     // color_menu = document.querySelector(".dropbtn");
     color_chose = document.querySelector(".colors");
+    toggle_color_change = document.querySelector(".colorChangeBtn");
 
     gl = canvas.getContext("webgl2");
     if(!gl){
@@ -96,7 +100,6 @@ window.onload = function init(){
     // Clear the canvas
     gl.clearColor(0,0.125,0.2473, 1.0);
 
-    // triangle point
     vertices = [
         // middle point
         vec3(0.0000,  0.0000, -1.0000),
@@ -109,18 +112,32 @@ window.onload = function init(){
         // right point
         vec3(0.4165, -0.2405,  0.3333)
     ];
-    // add colors and vertices for one triangle
+
+    // array to store different color combinations
+    colorList = [
+        [ // red blue green
+            vec3(1.0, 0.0, 0.0),
+            vec3(0.0, 1.0, 0.0),
+            vec3(0.0, 0.0, 1.0),
+            vec3(0.0, 0.0, 0.0)
+        ],
+        [ // white black orange
+            vec3(1.0, 1.0, 1.0),
+            vec3(0.906,0.467,0.098),
+            vec3(0.0, 0.0, 0.0),
+            vec3(0.0, 0.0, 0.0)
+        ],
+        [   //  black green grey
+            vec3(0.686,0.749,0.863),
+            vec3(0.0, 0.0, 0.0),
+            vec3(0.306,0.529,0.239),
+            vec3(0.0, 0.0, 0.0)
+        ],
+
+    ];
 
     // basic color = red blue green
-    baseColors = [
-        // left up triangle
-        vec3(1.0, 0.0, 0.0),
-        // bottom triangle
-        vec3(0.0, 1.0, 0.0),
-        // right triangle
-        vec3(0.0, 0.0, 1.0),
-        vec3(0.0, 0.0, 0.0)
-    ];
+    baseColors = colorList[0];
 
     gl.enable(gl.DEPTH_TEST);
 
@@ -143,7 +160,6 @@ window.onload = function init(){
     ratioLoc = gl.getUniformLocation(program, "ratio");
     // colorLoc = gl.getUniformLocation(program, "aColor");
 
-    // triangle division
     triangleDivision(vertices);
 
     // set up ratio
@@ -164,44 +180,24 @@ window.onload = function init(){
         // clear colors before
         colors=[];
 
-        // add colors and vertices for one triangle
+        // change color according to the user input
         if(e.target.value=="redbluegreen"){
-            baseColors = [
-                // left up triangle
-                vec3(1.0, 0.0, 0.0),
-                // bottom triangle
-                vec3(0.0, 1.0, 0.0),
-                // right triangle
-                vec3(0.0, 0.0, 1.0),
-                vec3(0.0, 0.0, 0.0)
-            ];
+            baseColors = colorList[0];
         }
         else if(e.target.value=="whiteblackorange"){
-            baseColors = [
-                // left up triangle
-                vec3(1.0, 1.0, 1.0),
-                // bottom triangle
-                vec3(0.906,0.467,0.098),
-                // right triangle
-                vec3(0.0, 0.0, 0.0),
-                vec3(0.0, 0.0, 0.0)
-            ];
+            baseColors =colorList[1];
         }
         else if (e.target.value=="blackgreengrey"){
-            baseColors = [
-                // left up triangle
-                vec3(0.686,0.749,0.863),
-                // bottom triangle
-                vec3(0.0, 0.0, 0.0),
-                // right triangle
-                vec3(0.306,0.529,0.239),
-                vec3(0.0, 0.0, 0.0)
-            ];
+            baseColors = colorList[2];
         }
     
         triangleDivision(vertices);
-        
+    }
 
+    // When the user toggle change color when hit corner, reset the variable to allow that animation happen
+
+    toggle_color_change.onClick = function(e) {
+        changeColorOn = changeColorOn ? false : true;
     }
     // When the user select different number of sub division, change the value
     sliderRec.onchange = function(e) {
@@ -367,7 +363,6 @@ function scaleTriangle(){
     gl.uniform2fv(scaleLoc, scale);
 
 }
-
 function triangle( a, b, c, color )
 {
     colors.push(baseColors[color]);
@@ -383,7 +378,6 @@ function tetra( a, b, c, d )
 {
     // tetrahedron with each side using
     // a different color
-
     triangle(a, c, b, 0);
     triangle(a, c, d, 1);
     triangle(a, b, d, 2);
