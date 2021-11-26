@@ -47,6 +47,7 @@ var canTrans = false;
 
 // change color when hit corner var
 var changeColorOn = true;
+var currentColorNumber = 0;
 
 // User interface
 var sliderRec;
@@ -196,7 +197,7 @@ window.onload = function init(){
 
     // When the user toggle change color when hit corner, reset the variable to allow that animation happen
 
-    toggle_color_change.onClick = function(e) {
+    toggle_color_change.onclick = function(e) {
         changeColorOn = changeColorOn ? false : true;
     }
     // When the user select different number of sub division, change the value
@@ -316,7 +317,10 @@ function transTriangle(){
     }
     // Implement logic to decide the next transition positive or negative for x and y
     if(changeDirection){
-        
+        // change color
+        if(changeColorOn){
+            changeColor();
+        }
         // cannot change direction again once determined
         changeDirection = false;
         var randomNumber = Math.floor(Math.random() * 2) + 1;
@@ -456,6 +460,20 @@ function rotate(){
 }
 
 
+// function to handle colorChange
+function changeColor(){
+    // get upper limit of the color combination
+    var size  = colorList.length;
+    colors=[];
+    // rotation of each color combination
+    currentColorNumber = currentColorNumber < size-1 ? currentColorNumber+1 : 0;
+    // change base color
+    baseColors = colorList[currentColorNumber];
+    // new triangle with new color
+    triangleDivision(vertices);
+}
+
+
 
 function render(){
     // Clear the canvas
@@ -468,18 +486,19 @@ function render(){
 
     // start rotate
     if(!isPaused && canRotate && !canScale && !canTrans){
-        rotate();
+        transTriangle();
+
+        // rotate();
     }
     // start scaling 
     else if(!isPaused && !canRotate && canScale && !canTrans){
-        scaleTriangle();
+        // scaleTriangle();
     }
     // start transition
     else if(!isPaused && !canScale && !canRotate  && canTrans){
-        transTriangle();
+        // transTriangle();
     }
     // loop
     requestAnimationFrame(render);
-
 }
 
