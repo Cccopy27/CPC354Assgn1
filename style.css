@@ -6,14 +6,14 @@
     display: inline-block;
 }
 button.start{
-    background-color: rgb(71, 185, 36);
+    background-color: rgb(110, 202, 82);
 
 }
 button.stop:hover{
     color: white;
 }
 button.stop{
-    background-color: red;
+    background-color: rgb(250, 154, 154);;
 }
 button.reset{
     background-color: rgb(96, 243, 248);
@@ -23,18 +23,23 @@ button.start:hover, button.reset:hover{
     color: white;
 }
 button{
+    box-shadow: rgba(0, 0, 0, 0.25) 0px 54px 55px, rgba(0, 0, 0, 0.12) 0px -12px 30px, rgba(0, 0, 0, 0.12) 0px 4px 6px, rgba(0, 0, 0, 0.17) 0px 12px 13px, rgba(0, 0, 0, 0.09) 0px -3px 5px;
     font-size: 15px;
     text-decoration: none;
     border-radius: 8rem;
-    border: 1px solid black;
+    border: 0.5px solid black;
 
     width: 100px;
     height: 50;
-    margin: 20px;
+    margin: 12px;
+}
+
+button:hover{
+    border: 0.5px solid rgb(110, 109, 109);
 }
 .slidercontainer{
     width: 100%;
-    margin: 30px auto;
+    margin: 20px auto;
 }
 .slide {
     -webkit-appearance: none;
@@ -65,10 +70,6 @@ button{
     background: #04AA6D;
     cursor: pointer;
 }
-/* #wrapper{
-    width: 1300px;
-    margin: 0 auto;
-} */
 
 #dialog{
    width: 300px;
@@ -79,7 +80,31 @@ button{
     margin-left: 50px;
 }
 
-.colors{
-    width: 150px;
+.colorChangeBtn, .magnet {
+    margin-top: 30px;
+    margin-bottom: 20px;
+    font-size: 12px;
+    width: 120px;
+    height: 60px;
 }
 
+button.changeColorOn, .magnetOn{
+    background-color: rgb(110, 202, 82);
+}
+
+button.changeColorOff, .magnetOff{
+    background-color: rgb(250, 154, 154);
+    color: black;
+}
+button.colorChangeBtn:hover, .magnet:hover{
+    color: white;
+}
+
+.guide{
+    margin-top: 5px;
+    text-align: center;
+}
+
+.guide span{
+    font-size: medium;
+}

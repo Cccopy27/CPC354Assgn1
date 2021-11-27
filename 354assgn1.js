@@ -5,7 +5,6 @@ var canvas;
 var gl;
 var program;
 
-// triangle division var
 var positions = [];
 var colors = [];
 var numTimesToSubdivide = 0;
@@ -14,11 +13,14 @@ var cBuffer;
 var vBuffer;
 var colorLoc;
 var positionLoc;
-var baseColors=[];
+var baseColors = [];
+var colorList = [];
 
 // rotate var
 var theta = 0.0;
 var rotateSpeed = 0.01;
+var oriRotateSpeed = 0.01;
+
 var thetaLoc;
 var direction = true;
 var count = 0;
@@ -32,11 +34,13 @@ var isPaused = true;
 var scale = [1,1];
 var scaleLoc;
 var canScale = false;
+var scaleRatio = 1.2;
 
 // transition var
 var transLoc;
 var trans = [0,0];
 var changeDirection = false;
+var oriTranSpeed = 0.01;
 var speedX = 0.005;
 var speedY = 0.005;
 var canXgoLeft = false;
@@ -45,6 +49,17 @@ var canYgoDown= false;
 var canYgoUp = true;
 var canTrans = false;
 
+// change color when hit corner var
+var changeColorOn = true;
+var currentColorNumber = 0;
+
+// magnet mode var
+var magnetModeOn = false;
+var mouseX;
+var mouseY;
+var distanceMagnetX;
+var distanceMagnetY;
+var magnet;
 
 // User interface
 var sliderRec;
@@ -57,6 +72,7 @@ var slide_rot;
 var slide_trans;
 var color_menu;
 var color_chose;
+var toggle_color_change;
 
 // Special var to notice
 // If the canvas is not square, we need to recalculate the ratio for it as it is not 1: 1, we calculate it by using width / height to get the ratio
@@ -64,6 +80,7 @@ var color_chose;
 var ratio;
 var ratioLoc;
 
+var currLoc;
 window.onload = function init(){
 
     //...........................................................
@@ -82,6 +99,8 @@ window.onload = function init(){
     slide_trans = document.querySelector(".slide_trans");
     // color_menu = document.querySelector(".dropbtn");
     color_chose = document.querySelector(".colors");
+    toggle_color_change = document.querySelector(".colorChangeBtn");
+    magnet = document.querySelector(".magnet");
 
     gl = canvas.getContext("webgl2");
     if(!gl){
@@ -96,7 +115,6 @@ window.onload = function init(){
     // Clear the canvas
     gl.clearColor(0,0.125,0.2473, 1.0);
 
-    // triangle point
     vertices = [
         // middle point
         vec3(0.0000,  0.0000, -1.0000),
@@ -109,18 +127,40 @@ window.onload = function init(){
         // right point
         vec3(0.4165, -0.2405,  0.3333)
     ];
-    // add colors and vertices for one triangle
+
+    // currLoc
+    currLoc = [
+        [vertices[0][0],vertices[0][1]],
+        [vertices[1][0],vertices[1][1]],
+        [vertices[2][0],vertices[2][1]],
+        [vertices[3][0],vertices[3][1]]
+    ];
+
+    // array to store different color combinations
+    colorList = [
+        [ // red blue green
+            vec3(1.0, 0.0, 0.0),
+            vec3(0.0, 1.0, 0.0),
+            vec3(0.0, 0.0, 1.0),
+            vec3(0.0, 0.0, 0.0)
+        ],
+        [ // white black orange
+            vec3(1.0, 1.0, 1.0),
+            vec3(0.906,0.467,0.098),
+            vec3(0.0, 0.0, 0.0),
+            vec3(0.0, 0.0, 0.0)
+        ],
+        [   //  black green grey
+            vec3(0.686,0.749,0.863),
+            vec3(0.0, 0.0, 0.0),
+            vec3(0.306,0.529,0.239),
+            vec3(0.0, 0.0, 0.0)
+        ],
+
+    ];
 
     // basic color = red blue green
-    baseColors = [
-        // left up triangle
-        vec3(1.0, 0.0, 0.0),
-        // bottom triangle
-        vec3(0.0, 1.0, 0.0),
-        // right triangle
-        vec3(0.0, 0.0, 1.0),
-        vec3(0.0, 0.0, 0.0)
-    ];
+    baseColors = colorList[0];
 
     gl.enable(gl.DEPTH_TEST);
 
@@ -143,7 +183,6 @@ window.onload = function init(){
     ratioLoc = gl.getUniformLocation(program, "ratio");
     // colorLoc = gl.getUniformLocation(program, "aColor");
 
-    // triangle division
     triangleDivision(vertices);
 
     // set up ratio
@@ -164,44 +203,69 @@ window.onload = function init(){
         // clear colors before
         colors=[];
 
-        // add colors and vertices for one triangle
+        // change color according to the user input
         if(e.target.value=="redbluegreen"){
-            baseColors = [
-                // left up triangle
-                vec3(1.0, 0.0, 0.0),
-                // bottom triangle
-                vec3(0.0, 1.0, 0.0),
-                // right triangle
-                vec3(0.0, 0.0, 1.0),
-                vec3(0.0, 0.0, 0.0)
-            ];
+            baseColors = colorList[0];
         }
         else if(e.target.value=="whiteblackorange"){
-            baseColors = [
-                // left up triangle
-                vec3(1.0, 1.0, 1.0),
-                // bottom triangle
-                vec3(0.906,0.467,0.098),
-                // right triangle
-                vec3(0.0, 0.0, 0.0),
-                vec3(0.0, 0.0, 0.0)
-            ];
+            baseColors =colorList[1];
         }
         else if (e.target.value=="blackgreengrey"){
-            baseColors = [
-                // left up triangle
-                vec3(0.686,0.749,0.863),
-                // bottom triangle
-                vec3(0.0, 0.0, 0.0),
-                // right triangle
-                vec3(0.306,0.529,0.239),
-                vec3(0.0, 0.0, 0.0)
-            ];
+            baseColors = colorList[2];
         }
     
         triangleDivision(vertices);
-        
+    }
 
+    // When the user toggle magnet mode
+    magnet.onclick= function(e) {
+        magnetModeOn = !magnetModeOn;
+
+        if(magnetModeOn){
+            magnet.innerText = "Magnet Mode : \nOn";
+            magnet.classList.add("magnetOn");
+            magnet.classList.remove("magnetOff");
+        }
+        else{
+            magnet.innerText = "Magnet Mode : \nOff";
+            magnet.classList.remove("magnetOn");
+            magnet.classList.add("magnetOff");
+            // prevent object from stuck on wall and out of bound
+            // find which triangle side is nearear to the wall and move reverse the triangle 
+            var tempX = currLoc[0][0];
+            var tempY = currLoc[0][1];
+            var tempspeedX = Math.abs(speedX);
+            var tempspeedY = Math.abs(speedY);
+            trans[0] = tempX > 0 ? trans[0] - tempspeedX : trans[0] + tempspeedX;
+            trans[1] = tempY > 0 ? trans[1] - tempspeedY : trans[1] + tempspeedY;
+
+            for(var i = 0; i < 4; i++){
+                for(var j = 0; j < 2; j++){
+                    if(j == 0){
+                        currLoc[i][j] = tempX > 0 ? currLoc[i][j] - tempspeedX : currLoc[i][j] + tempspeedX;
+                    }
+                    else{
+                        currLoc[i][j] = tempY > 0 ? currLoc[i][j] - tempspeedY: currLoc[i][j] + tempspeedY;
+                    }
+                }
+            }
+        }
+    }
+
+    // When the user toggle change color when hit corner, reset the variable to allow that animation happen
+    toggle_color_change.onclick = function(e) {
+        if(changeColorOn){
+            changeColorOn = false;
+            toggle_color_change.classList.add("changeColorOff");
+            toggle_color_change.classList.remove("changeColorOn");
+            toggle_color_change.innerText = "Change color when hit corner: Off";
+        }
+        else{
+            changeColorOn = true;
+            toggle_color_change.classList.add("changeColorOn");
+            toggle_color_change.classList.remove("changeColorOff"); 
+            toggle_color_change.innerText = "Change color when hit corner: On";
+        }
     }
     // When the user select different number of sub division, change the value
     sliderRec.onchange = function(e) {
@@ -216,8 +280,8 @@ window.onload = function init(){
 
     // When the user select different rotation speed, change the value
     sliderRot.onchange = function(e) {
-        rotateSpeed = 0.01;
-        rotateSpeed += parseInt(e.target.value) * 0.005 ;
+        rotateSpeed = oriRotateSpeed;
+        rotateSpeed += parseInt(e.target.value) * oriRotateSpeed ;
     };
 
     // update UI
@@ -227,8 +291,8 @@ window.onload = function init(){
 
      // When the user select different transition speed, change the value
     sliderTrans.onchange = function(e) {
-        speedX = speedY = 0.005;
-        var speedExtra = parseInt(e.target.value) * 0.002;
+        speedX = speedY = oriTranSpeed;
+        var speedExtra = parseInt(e.target.value) * oriTranSpeed;
         speedX += speedExtra;
         speedY = speedX;
     };
@@ -259,67 +323,149 @@ window.onload = function init(){
         window.location.reload();
     };
 
+    canvas.addEventListener("mousemove", function(e){
+        var cRect = canvas.getBoundingClientRect();
+        mouseX = ((e.clientX - cRect.left - cRect.width/2) / (cRect.width/2));
+        mouseY = ((-(e.clientY-cRect.top)+cRect.height/2)/(cRect.height/2));
+    })
+
     render();
 }
 
 function transTriangle(){
+    var outOfBound = false;
+    // check for out of bound
+    currLoc.forEach(item=>{
+        item.forEach(coor =>{
+            if(coor >= 1 || coor <=-1){
+                outOfBound = true;
+            }
+        })
+    });
 
-    // speedX *= 1.633;
-    // object havent reach upper side of canvas
-    if(trans[1] + vertices[1][1]*scale[0] < 1 &&
-      // object havent reach down side of canvas
-      trans[1] + vertices[2][1]*scale[0] > -1 && 
-      // object havent reach right side of canvas
-      (trans[0] + vertices[3][0]*scale[0])/ratio < 1 && 
-      // object havent reach left side of canvas
-      (trans[0] + vertices[2][0]*scale[0])/ratio > -1){
-        trans[0] += speedX;
-        trans[1] += speedY;
+    // if all ok, normal transition
+    if(!outOfBound){
+        if(magnetModeOn){
+            distanceMagnetX = currLoc[0][0] - mouseX;
+            distanceMagnetY = currLoc[0][1] - mouseY;
+
+            speedX = Math.abs(speedX);
+            speedY = Math.abs(speedY);
+            trans[0] = distanceMagnetX >= 0 ? trans[0] - speedX : trans[0] + speedX;
+            trans[1] = distanceMagnetY >= 0 ? trans[1] - speedY : trans[1] + speedY;
+        }
+        else{
+            trans[0] += speedX;
+            trans[1] += speedY;
+        }
+        
+        for(var i = 0; i < 4; i++){
+            for(var j = 0; j < 2; j++){
+                if(magnetModeOn){
+                    if(j==0){
+                        if(distanceMagnetX >= 0){
+                            currLoc[i][j] -= (speedX/ratio);
+                        }
+                        else{
+
+                            currLoc[i][j] += (speedX/ratio);
+                        }
+                    }
+                    else{
+                        if(distanceMagnetY >= 0){
+
+                            currLoc[i][j] -= (speedY);
+                        }
+                        else{
+
+                            currLoc[i][j] += (speedY);
+                        }
+                    }
+                    
+                }
+                else{
+                    currLoc[i][j] += j==0 ? (speedX/ratio) : speedY;
+                }
+            }
+        }
     }
+    // not ok, object hit wall already
     else{
         // Object should change direction
         changeDirection = true;
 
-        // reach top
-        if(trans[1] + vertices[1][1]*scale[0] >= 1){
-            // remove object from stucking with wall
-            trans[1] -= speedY;
-            // set correct situation
-            canYgoDown = true;
-            canYgoUp = false;
-            canXgoLeft = true;
-            canXgoRight = true;
-
-        // reach bottom
-        }else if(trans[1] + vertices[2][1]*scale[0] <= -1){
-            trans[1] -= speedY;
-            canYgoDown = false;
-            canYgoUp = true;
-            canXgoLeft = true;
-            canXgoRight = true;
-        }
-
-        // reach right
-        else if((trans[0] + vertices[3][0]*scale[0])/ratio >= 1){
-             trans[0] -= speedX;
+        for(var i = 0; i < 4; i++){
+            for(var j = 0; j < 2; j++){
+                // handle x coordinate
+                if(j == 0){
+                    // x hit right wall
+                    if(currLoc[i][j] >= 1){
+                        // reflection
+                        for(var k = 0; k < 4; k++){
+                            currLoc[k][0] -= (speedX*2/ratio);
+                            }
+                        trans[0] -= (speedX*2);
             
-            canXgoLeft = true;
-            canYgoDown = true;
-            canYgoUp = true;
-            canXgoRight = false;
-        }
-
-        // reach left
-        else if( (trans[0] + vertices[2][0]*scale[0])/ratio <= -1){
-            trans[0] -= speedX;
-            canXgoLeft = false;
-            canYgoDown = true;
-            canYgoUp = true;
-            canXgoRight = true;
+                        canXgoLeft = true;
+                        canYgoDown = true;
+                        canYgoUp = true;
+                        canXgoRight = false;
+                    }
+                    // x hit left wall
+                    else if(currLoc[i][j] <= -1){
+                        // reflection
+                        for(var k = 0; k < 4; k++){
+                            currLoc[k][0] = magnetModeOn ? currLoc[k][0] + (speedX*2/ratio) : currLoc[k][0] - (speedX*2/ratio)
+                            // currLoc[k][0] -= (speedX*2/ratio);
+                        }
+                        // trans[0] -= (speedX*2);
+                        trans[0] = magnetModeOn ? trans[0] + (speedX*2) : trans[0] - (speedX*2)
+                        canXgoLeft = false;
+                        canYgoDown = true;
+                        canYgoUp = true;
+                        canXgoRight = true;
+                    }
+                }
+                // handle y coordinate
+                else{
+                    // y hit upper wall
+                    if(currLoc[i][j] >= 1){
+                        // reflection
+                        for(var k = 0; k < 4; k++){
+                            currLoc[k][1] -= (speedY*2);
+                        }
+                        trans[1] -= (speedY*2);
+                        canYgoDown = true;
+                        canYgoUp = false;
+                        canXgoLeft = true;
+                        canXgoRight = true;
+                    }
+                    // y hit bottom wall
+                    else if(currLoc[i][j] <= -1){
+                        // reflection
+                        for(var k = 0; k < 4; k++){
+                            currLoc[k][1] = magnetModeOn ? currLoc[k][1] +(speedY*2) : currLoc[k][1] - (speedY*2); 
+                            // currLoc[k][1] += (speedY*2);
+                        }
+                        trans[1] = magnetModeOn ? trans[1] + (speedY*2) : trans[1] - (speedY*2);
+                        // trans[1] += (speedY*2);
+                        canYgoDown = false;
+                        canYgoUp = true;
+                        canXgoLeft = true;
+                        canXgoRight = true;
+                    }
+                }
+            }
         }
     }
+    // reset transalation to the object
+    gl.uniform2fv(transLoc, trans);
     // Implement logic to decide the next transition positive or negative for x and y
     if(changeDirection){
+        // change color
+        if(changeColorOn){
+            changeColor();
+        }
         
         // cannot change direction again once determined
         changeDirection = false;
@@ -343,22 +489,93 @@ function transTriangle(){
             speedX = canXgoLeft ? -speedX : speedX;
             speedY = canYgoDown ? -speedY : speedY;
         }
-        
     }
+}
 
-    // reset transalation to the object
-    gl.uniform2fv(transLoc, trans);
+// Rotate shape function
+function rotate(){
+    theta += (direction ? -rotateSpeed: rotateSpeed);
+    for(var i = 0; i < 4; i++){
+        switch(i){
+            case 0:
+                var xOldLoc = vertices[0][0];
+                var yOldLoc = vertices[0][1];
+            case 1 :
+                var xOldLoc = vertices[1][0];
+                var yOldLoc = vertices[1][1];
+                break;
+            case 2 :
+                var xOldLoc = vertices[2][0];
+                var yOldLoc = vertices[2][1];
+                break;
+            case 3 :
+                var xOldLoc = vertices[3][0];
+                var yOldLoc = vertices[3][1];
+                break;
+        }
+        
+        for(var j = 0; j < 2; j++){
+            if(i!=0){
+                // x location
+                if(j == 0){
+                    currLoc[i][j] = ((-Math.sin(theta) * yOldLoc) + (Math.cos(theta) * xOldLoc))/ratio;
+                }
+                // y location
+                else{
+                    currLoc[i][j] =( Math.sin(theta) * (xOldLoc)) + (Math.cos(theta) * yOldLoc);
+                }
+            }
+        }
+    }
+    
+     // reset the theta properties
+     gl.uniform1f(thetaLoc, theta);
 
+    // Change the direction of rotation after reach 180 degree
+    // after rotate left for 180 degree
+    if(theta >= Math.PI){
+        direction = true;
+        count++;
+        }
+        // after rotate right for 180 degree
+        else if(theta <= -Math.PI){
+                direction = false;
+                count++;
+        }
+        // Stop the rotation when the triagle return to its original orientation after finished rotate left and right
+        if(count == 2 && theta <= rotateSpeed){
+            canRotate = false;
+            canScale = true;
+        } 
+}
+
+// function to handle colorChange
+function changeColor(){
+    // get upper limit of the color combination
+    var size  = colorList.length;
+    colors=[];
+    // rotation of each color combination
+    currentColorNumber = currentColorNumber < size-1 ? currentColorNumber+1 : 0;
+    // change base color
+    baseColors = colorList[currentColorNumber];
+    // new triangle with new color
+    triangleDivision(vertices);
 }
 
 function scaleTriangle(){
     // if scale havent reach suitable size
-    if(scale[0]<1.5){
+    if(scale[0]<scaleRatio){
         scale[0] +=0.002;
         scale[1] +=0.002;
     }
     // scale reach suitable size
     else{
+        // keep track latest position of three point
+        for(var i = 0; i < 4; i++){
+            for(var j = 0; j < 2; j++){
+                currLoc[i][j] *= j==0 ? scale[0] : scale[0];
+            }
+        }
         canScale = false;
         canTrans = true;
     }
@@ -367,7 +584,6 @@ function scaleTriangle(){
     gl.uniform2fv(scaleLoc, scale);
 
 }
-
 function triangle( a, b, c, color )
 {
     colors.push(baseColors[color]);
@@ -383,7 +599,6 @@ function tetra( a, b, c, d )
 {
     // tetrahedron with each side using
     // a different color
-
     triangle(a, c, b, 0);
     triangle(a, c, d, 1);
     triangle(a, b, d, 2);
@@ -435,34 +650,6 @@ function triangleDivision(vertices){
     gl.vertexAttribPointer( positionLoc, 3, gl.FLOAT, false, 0, 0 );
 }
 
-// Rotate shape function
-function rotate(){
-    theta += (direction ? -rotateSpeed: rotateSpeed);
-    
-    // Change the direction of rotation after reach 180 degree
-    // after rotate right for 180 degree
-    if(theta >= Math.PI){
-            direction = true;
-            count++;
-    }
-    // after rotate left for 180 degree
-    else if(theta <= -Math.PI){
-            direction = false;
-            count++;
-    }
-
-    // Stop the rotation when the triagle return to its original orientation after finished rotate left and right
-    if(count == 2 && theta <= 0){
-        canRotate = false;
-        canScale = true;
-     }
-    
-     // reset the theta properties
-    gl.uniform1f(thetaLoc, theta);
-}
-
-
-
 function render(){
     // Clear the canvas
     gl.clear(gl.COLOR_BUFFER_BIT);
@@ -471,7 +658,6 @@ function render(){
 
     gl.drawArrays( gl.TRIANGLES, 0, positions.length );
     //  positions = [];
-
     // start rotate
     if(!isPaused && canRotate && !canScale && !canTrans){
         rotate();
@@ -484,8 +670,8 @@ function render(){
     else if(!isPaused && !canScale && !canRotate  && canTrans){
         transTriangle();
     }
+    
     // loop
     requestAnimationFrame(render);
-
 }
 
