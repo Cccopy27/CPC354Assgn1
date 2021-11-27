@@ -283,65 +283,92 @@ window.onload = function init(){
 }
 
 function transTriangle(){
-    // object havent reach upper side of canvas
-    if(trans[1] + vertices[1][1]*scale[0] < 1 &&
-      // object havent reach down side of canvas
-      trans[1] + vertices[2][1]*scale[0] > -1 && 
-      // object havent reach right side of canvas
-      (trans[0] + vertices[3][0]*scale[0])/ratio < 1 && 
-      // object havent reach left side of canvas
-      (trans[0] + vertices[2][0]*scale[0])/ratio > -1){
+    // console.log(currLoc[2][0]);
+    var outOfBound = false;
+    // check for out of bound
+    currLoc.forEach(item=>{
+        item.forEach(coor =>{
+            if(coor >= 1 || coor <=-1){
+                outOfBound = true;
+            }
+        })
+    });
+
+    // if all ok, normal transition
+    if(!outOfBound){
         trans[0] += speedX;
         trans[1] += speedY;
-
-        // Keep track all 3 point of triangle
         for(var i = 0; i < 3; i++){
             for(var j = 0; j < 2; j++){
-                currLoc[i][j] += j==0 ? speedX : speedY;
+                currLoc[i][j] += j==0 ? speedX/ratio : speedY;
             }
         }
-
     }
+    // not ok, object hit wall already
     else{
         // Object should change direction
         changeDirection = true;
 
-        // reach top
-        if(trans[1] + vertices[1][1]*scale[0] >= 1){
-            // remove object from stucking with wall
-            trans[1] -= speedY;
-            // set correct situation
-            canYgoDown = true;
-            canYgoUp = false;
-            canXgoLeft = true;
-            canXgoRight = true;
-
-        // reach bottom
-        }else if(trans[1] + vertices[2][1]*scale[0] <= -1){
-            trans[1] -= speedY;
-            canYgoDown = false;
-            canYgoUp = true;
-            canXgoLeft = true;
-            canXgoRight = true;
-        }
-
-        // reach right
-        else if((trans[0] + vertices[3][0]*scale[0])/ratio >= 1){
-             trans[0] -= speedX;
+        for(var i = 0; i < 3; i++){
+            for(var j = 0; j < 2; j++){
+                // handle x coordinate
+                if(j == 0){
+                    // x hit right wall
+                    if(currLoc[i][j] >= 1){
+                        // reflection
+                        for(var k = 0; k < 3; k++){
+                            currLoc[k][0] -= speedX/ratio;
+                        }
+                        trans[0] -= speedX;
             
-            canXgoLeft = true;
-            canYgoDown = true;
-            canYgoUp = true;
-            canXgoRight = false;
-        }
-
-        // reach left
-        else if( (trans[0] + vertices[2][0]*scale[0])/ratio <= -1){
-            trans[0] -= speedX;
-            canXgoLeft = false;
-            canYgoDown = true;
-            canYgoUp = true;
-            canXgoRight = true;
+                        canXgoLeft = true;
+                        canYgoDown = true;
+                        canYgoUp = true;
+                        canXgoRight = false;
+                    }
+                    // x hit left wall
+                    else if(currLoc[i][j] <= -1){
+                        // reflection
+                        for(var k = 0; k < 3; k++){
+                            currLoc[k][0] -= speedX/ratio;
+                        }
+                        trans[0] -= speedX;
+                        canXgoLeft = false;
+                        canYgoDown = true;
+                        canYgoUp = true;
+                        canXgoRight = true;
+                    }
+                }
+                // handle y coordinate
+                else{
+                    // y hit upper wall
+                    if(currLoc[i][j] >= 1){
+                        // reflection
+                        for(var k = 0; k < 3; k++){
+                            currLoc[k][1] -= speedY;
+                        }
+                        trans[1] -= speedY;
+                        
+                        canYgoDown = true;
+                        canYgoUp = false;
+                        canXgoLeft = true;
+                        canXgoRight = true;
+                    }
+                    // y hit bottom wall
+                    else if(currLoc[i][j] <= -1){
+                        // reflection
+                        for(var k = 0; k < 3; k++){
+                            currLoc[k][1] -= speedY;
+                        }
+                        // currLoc[i][j] -= speedY;
+                        trans[1] -= speedY;
+                        canYgoDown = false;
+                        canYgoUp = true;
+                        canXgoLeft = true;
+                        canXgoRight = true;
+                    }
+                }
+            }
         }
     }
     // Implement logic to decide the next transition positive or negative for x and y
@@ -372,7 +399,6 @@ function transTriangle(){
             speedX = canXgoLeft ? -speedX : speedX;
             speedY = canYgoDown ? -speedY : speedY;
         }
-        
     }
 
     // reset transalation to the object
@@ -383,16 +409,43 @@ function transTriangle(){
 // Rotate shape function
 function rotate(){
     theta += (direction ? -rotateSpeed: rotateSpeed);
-
+    for(var i = 0; i < 3; i++){
+        switch(i){
+            case 0 :
+                var xOldLoc = vertices[1][0];
+                var yOldLoc = vertices[1][1];
+                break;
+            case 1 :
+                var xOldLoc = vertices[2][0];
+                var yOldLoc = vertices[2][1];
+                break;
+            case 2 :
+                var xOldLoc = vertices[3][0];
+                var yOldLoc = vertices[3][1];
+                break;
+        }
+        
+        for(var j = 0; j < 2; j++){
+            // x location
+            if(j == 0){
+                currLoc[i][j] = ((-Math.sin(theta) * yOldLoc) + (Math.cos(theta) * xOldLoc))/ratio;
+            }
+            // y location
+            else{
+                currLoc[i][j] =( Math.sin(theta) * (xOldLoc)) + (Math.cos(theta) * yOldLoc);
+            }
+        }
+    }
+    
      // reset the theta properties
      gl.uniform1f(thetaLoc, theta);
     // Change the direction of rotation after reach 180 degree
-    // after rotate right for 180 degree
+    // after rotate left for 180 degree
     if(theta >= Math.PI){
             direction = true;
             count++;
     }
-    // after rotate left for 180 degree
+    // after rotate right for 180 degree
     else if(theta <= -Math.PI){
             direction = false;
             count++;
@@ -402,10 +455,7 @@ function rotate(){
         keepRotate = true;
         canRotate = false;
         canScale = true;
-     }
-    
-    
-    // console.log(theta);
+     }   
 }
 
 
@@ -433,7 +483,7 @@ function scaleTriangle(){
         // keep track latest position of three point
         for(var i = 0; i < 3; i++){
             for(var j = 0; j < 2; j++){
-                currLoc[i][j] *= j==0 ? scale[0]/ratio : scale[0];
+                currLoc[i][j] *= j==0 ? scale[0] : scale[0];
             }
         }
         canScale = false;
@@ -509,10 +559,6 @@ function triangleDivision(vertices){
     gl.bufferData(gl.ARRAY_BUFFER,  flatten(positions), gl.STATIC_DRAW);
     gl.vertexAttribPointer( positionLoc, 3, gl.FLOAT, false, 0, 0 );
 }
-
-
-
-
 
 function render(){
     // Clear the canvas
