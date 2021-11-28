@@ -97,15 +97,13 @@ window.onload = function init(){
     slide_rec = document.querySelector(".slide_rec");
     slide_rot = document.querySelector(".slide_rot");
     slide_trans = document.querySelector(".slide_trans");
-    // color_menu = document.querySelector(".dropbtn");
     color_chose = document.querySelector(".colors");
     toggle_color_change = document.querySelector(".colorChangeBtn");
     magnet = document.querySelector(".magnet");
 
     gl = canvas.getContext("webgl2");
-    if(!gl){
+    if(!gl)
         alert("WebGL 2.0 isn't available");
-    }
     
     // Calculate the ratio of rectangle
     ratio = canvas.width / canvas.height;
@@ -118,6 +116,7 @@ window.onload = function init(){
     vertices = [
         // middle point
         vec3(0.0000,  0.0000, -1.0000),
+
         // upper point
         vec3(0.0000,  0.4809,  0.3333),
 
@@ -128,7 +127,9 @@ window.onload = function init(){
         vec3(0.4165, -0.2405,  0.3333)
     ];
 
-    // currLoc
+    // currrent locations for all 3 points
+    // use to keep track all the points and for collision purpose
+    // only record x and y positions
     currLoc = [
         [vertices[0][0],vertices[0][1]],
         [vertices[1][0],vertices[1][1]],
@@ -151,10 +152,22 @@ window.onload = function init(){
             vec3(0.0, 0.0, 0.0)
         ],
         [   //  black green grey
-            vec3(0.686,0.749,0.863),
             vec3(0.0, 0.0, 0.0),
+            vec3(0.686,0.749,0.863),
             vec3(0.306,0.529,0.239),
             vec3(0.0, 0.0, 0.0)
+        ],
+        [   // chocolate orange yellow
+            vec3(0.937,0.569,0.129),
+            vec3(0.965,0.922,0.122),
+            vec3(0.337,0.071,0.063),
+            vec3(0.0, 0.0, 0.0)
+        ],
+        [   // chocolate pink grey 
+            vec3(0.925,0.188,0.278),
+            vec3(0.247,0.169,0.173),
+            vec3(0.675,0.635,0.529),
+            vec3(0.0 ,0.0, 0.0)
         ],
 
     ];
@@ -204,21 +217,24 @@ window.onload = function init(){
         colors=[];
 
         // change color according to the user input
-        if(e.target.value=="redbluegreen"){
+        if(e.target.value=="redbluegreen")
             baseColors = colorList[0];
-        }
-        else if(e.target.value=="whiteblackorange"){
+        else if(e.target.value=="whiteblackorange")
             baseColors =colorList[1];
-        }
-        else if (e.target.value=="blackgreengrey"){
+        else if(e.target.value=="blackgreengrey")
             baseColors = colorList[2];
-        }
+        else if(e.target.value=="chocolateorangeyellow")
+            baseColors = colorList[3];
+        else if(e.target.value=="chocolatepinkgrey")
+            baseColors = colorList[4];
     
+        // divide the triangle
         triangleDivision(vertices);
     }
 
     // When the user toggle magnet mode
     magnet.onclick= function(e) {
+        // toggle the magnet mode (on or off)
         magnetModeOn = !magnetModeOn;
 
         if(magnetModeOn){
@@ -231,22 +247,26 @@ window.onload = function init(){
             magnet.classList.remove("magnetOn");
             magnet.classList.add("magnetOff");
             // prevent object from stuck on wall and out of bound
-            // find which triangle side is nearear to the wall and move reverse the triangle 
+            // find which triangle side is near to the wall and move reverse the triangle using mid point
+
+            // get the mid point
             var tempX = currLoc[0][0];
             var tempY = currLoc[0][1];
+            // get the speed
             var tempspeedX = Math.abs(speedX);
             var tempspeedY = Math.abs(speedY);
+            // check which side is near the wall, if X > 0  means it is at right hand side, X < 0 mean left hand side
             trans[0] = tempX > 0 ? trans[0] - tempspeedX : trans[0] + tempspeedX;
+            // Y > 0 means it it upside, Y < 0 means downside
             trans[1] = tempY > 0 ? trans[1] - tempspeedY : trans[1] + tempspeedY;
 
+            // update the current location also
             for(var i = 0; i < 4; i++){
                 for(var j = 0; j < 2; j++){
-                    if(j == 0){
+                    if(j == 0)
                         currLoc[i][j] = tempX > 0 ? currLoc[i][j] - tempspeedX : currLoc[i][j] + tempspeedX;
-                    }
-                    else{
+                    else
                         currLoc[i][j] = tempY > 0 ? currLoc[i][j] - tempspeedY: currLoc[i][j] + tempspeedY;
-                    }
                 }
             }
         }
@@ -323,89 +343,101 @@ window.onload = function init(){
         window.location.reload();
     };
 
+    // get the mouse movement in canvas
     canvas.addEventListener("mousemove", function(e){
         var cRect = canvas.getBoundingClientRect();
+        // the original value is 0,0 at top left, we change it by minus with cRect.left and cRect.left to get 0,0 at middle of canvas
+        // the results also divde with cRect.width or cRect.height to get the results in range of -1 to 1 which is same for how webgl work on canvas
         mouseX = ((e.clientX - cRect.left - cRect.width/2) / (cRect.width/2));
         mouseY = ((-(e.clientY-cRect.top)+cRect.height/2)/(cRect.height/2));
     })
 
+    // start to render
     render();
 }
 
+// function to handle transistion of triangle
 function transTriangle(){
-    var outOfBound = false;
     // check for out of bound
+    var outOfBound = false;
+    // check for each current location, if the location >= 1 or <= -1, it was out of canvas
     currLoc.forEach(item=>{
         item.forEach(coor =>{
-            if(coor >= 1 || coor <=-1){
+            if(coor >= 1 || coor <=-1)
                 outOfBound = true;
-            }
         })
     });
 
     // if all ok, normal transition
     if(!outOfBound){
+        // if magnet mode on
         if(magnetModeOn){
+            // keep track the distance between our mouse and the triangle
             distanceMagnetX = currLoc[0][0] - mouseX;
             distanceMagnetY = currLoc[0][1] - mouseY;
 
             speedX = Math.abs(speedX);
             speedY = Math.abs(speedY);
+            // update the transition of triangle according to the distance mouse and triangle
+            // the triangle should always move towards the triangle
             trans[0] = distanceMagnetX >= 0 ? trans[0] - speedX : trans[0] + speedX;
             trans[1] = distanceMagnetY >= 0 ? trans[1] - speedY : trans[1] + speedY;
         }
+        // normal mode
+        // triangle move randomly by preset value 
         else{
             trans[0] += speedX;
             trans[1] += speedY;
         }
         
+        // update also for currentlocation 
         for(var i = 0; i < 4; i++){
             for(var j = 0; j < 2; j++){
+                // magnet mode
                 if(magnetModeOn){
+                    // x coordinate
                     if(j==0){
-                        if(distanceMagnetX >= 0){
+                        if(distanceMagnetX >= 0)
                             currLoc[i][j] -= (speedX/ratio);
-                        }
-                        else{
-
+                        else
                             currLoc[i][j] += (speedX/ratio);
-                        }
                     }
+                    // y coordinate
                     else{
-                        if(distanceMagnetY >= 0){
-
+                        if(distanceMagnetY >= 0)
                             currLoc[i][j] -= (speedY);
-                        }
-                        else{
-
-                            currLoc[i][j] += (speedY);
-                        }
-                    }
-                    
+                        else
+                            currLoc[i][j] += (speedY); 
+                    } 
                 }
-                else{
+                // normal mode
+                else
                     currLoc[i][j] += j==0 ? (speedX/ratio) : speedY;
-                }
             }
         }
     }
     // not ok, object hit wall already
     else{
-        // Object should change direction
+        // Object should change direction and move towards other direction
         changeDirection = true;
 
+        // check for which wall the triangle hit and do the reflection
         for(var i = 0; i < 4; i++){
             for(var j = 0; j < 2; j++){
-                // handle x coordinate
+                // x coordinate
                 if(j == 0){
+
                     // x hit right wall
                     if(currLoc[i][j] >= 1){
-                        // reflection
+                        // the triangle should remove itself from the wall to prevent stuck on the wall
+                        // triangle hit right wall, move it to the left by twice to ensure it always at correct position
                         for(var k = 0; k < 4; k++){
                             currLoc[k][0] -= (speedX*2/ratio);
                             }
                         trans[0] -= (speedX*2);
             
+                        // update corresponding variable
+                        // these variable will be used to decide which direction the triangle will go next
                         canXgoLeft = true;
                         canYgoDown = true;
                         canYgoUp = true;
@@ -415,11 +447,20 @@ function transTriangle(){
                     else if(currLoc[i][j] <= -1){
                         // reflection
                         for(var k = 0; k < 4; k++){
+                            // special case happen for left wall and down wall, if magnet mode is on, the triangle will always out of bound when hit left and down
+
+                            // this is because the way we handle the collision, we will change the speed to either positive or negative according to how the collision happen 
+
+                            // if the triangle hit left or down, we suppose to decease the speed mean move it towards right or up
+
+                            // if we use the normal way we handle the collision (add the speed) when magnet mode, the speed will always positive, if we minus it, the triangle will continue to move left hand or down side and out of bound happen
+
+                            // so instead of minus, we add it according to whether magnetmode on or off.
+
                             currLoc[k][0] = magnetModeOn ? currLoc[k][0] + (speedX*2/ratio) : currLoc[k][0] - (speedX*2/ratio)
-                            // currLoc[k][0] -= (speedX*2/ratio);
                         }
-                        // trans[0] -= (speedX*2);
-                        trans[0] = magnetModeOn ? trans[0] + (speedX*2) : trans[0] - (speedX*2)
+                        trans[0] = magnetModeOn ? trans[0] + (speedX*2) : trans[0] - (speedX*2);
+                        // update correct variable
                         canXgoLeft = false;
                         canYgoDown = true;
                         canYgoUp = true;
@@ -430,11 +471,13 @@ function transTriangle(){
                 else{
                     // y hit upper wall
                     if(currLoc[i][j] >= 1){
+
                         // reflection
-                        for(var k = 0; k < 4; k++){
+                        for(var k = 0; k < 4; k++)
                             currLoc[k][1] -= (speedY*2);
-                        }
                         trans[1] -= (speedY*2);
+
+                        // update correct variable
                         canYgoDown = true;
                         canYgoUp = false;
                         canXgoLeft = true;
@@ -443,12 +486,13 @@ function transTriangle(){
                     // y hit bottom wall
                     else if(currLoc[i][j] <= -1){
                         // reflection
-                        for(var k = 0; k < 4; k++){
+                        // special case for botton wall
+                        for(var k = 0; k < 4; k++)
                             currLoc[k][1] = magnetModeOn ? currLoc[k][1] +(speedY*2) : currLoc[k][1] - (speedY*2); 
-                            // currLoc[k][1] += (speedY*2);
-                        }
+                            
                         trans[1] = magnetModeOn ? trans[1] + (speedY*2) : trans[1] - (speedY*2);
-                        // trans[1] += (speedY*2);
+                        
+                        // update correct variable
                         canYgoDown = false;
                         canYgoUp = true;
                         canXgoLeft = true;
@@ -458,17 +502,22 @@ function transTriangle(){
             }
         }
     }
-    // reset transalation to the object
+    // reset transition of the object using uniform variable
     gl.uniform2fv(transLoc, trans);
-    // Implement logic to decide the next transition positive or negative for x and y
+
+    // Implement a logic to decide the next transition positive or negative for x and y
     if(changeDirection){
-        // change color
+        // change color when the object hit wall if changeColor mode was on
         if(changeColorOn){
             changeColor();
         }
         
-        // cannot change direction again once determined
+        // cannot change direction again once determined to prevent infinite loop
         changeDirection = false;
+
+        // get random number to implement random direction 
+        // if number == 1, the triangle should move right and up
+        // if number == 2 , move down and left
         var randomNumber = Math.floor(Math.random() * 2) + 1;
         
         // reset both speed to non-negative
@@ -494,7 +543,9 @@ function transTriangle(){
 
 // Rotate shape function
 function rotate(){
+    // update theta according to direction
     theta += (direction ? -rotateSpeed: rotateSpeed);
+    // update current location
     for(var i = 0; i < 4; i++){
         switch(i){
             case 0:
@@ -536,23 +587,25 @@ function rotate(){
     if(theta >= Math.PI){
         direction = true;
         count++;
-        }
-        // after rotate right for 180 degree
-        else if(theta <= -Math.PI){
-                direction = false;
-                count++;
-        }
-        // Stop the rotation when the triagle return to its original orientation after finished rotate left and right
-        if(count == 2 && theta <= rotateSpeed){
-            canRotate = false;
-            canScale = true;
-        } 
+    }
+    // after rotate right for 180 degree
+    else if(theta <= -Math.PI){
+            direction = false;
+            count++;
+    }
+    // Stop the rotation when the triagle return to its original orientation after finished rotate left and right
+    if(count == 2 && theta <= rotateSpeed){
+        // stop rotation and start scaling
+        canRotate = false;
+        canScale = true;
+    } 
 }
 
 // function to handle colorChange
 function changeColor(){
     // get upper limit of the color combination
     var size  = colorList.length;
+    // clear color before
     colors=[];
     // rotation of each color combination
     currentColorNumber = currentColorNumber < size-1 ? currentColorNumber+1 : 0;
@@ -564,7 +617,7 @@ function changeColor(){
 
 function scaleTriangle(){
     // if scale havent reach suitable size
-    if(scale[0]<scaleRatio){
+    if(scale[0] < scaleRatio){
         scale[0] +=0.002;
         scale[1] +=0.002;
     }
@@ -576,6 +629,7 @@ function scaleTriangle(){
                 currLoc[i][j] *= j==0 ? scale[0] : scale[0];
             }
         }
+        // stop scaling and start transition
         canScale = false;
         canTrans = true;
     }
@@ -584,6 +638,7 @@ function scaleTriangle(){
     gl.uniform2fv(scaleLoc, scale);
 
 }
+
 function triangle( a, b, c, color )
 {
     colors.push(baseColors[color]);
@@ -592,7 +647,6 @@ function triangle( a, b, c, color )
     positions.push(b);
     colors.push(baseColors[color]);
     positions.push(c);
-    
 }
 
 function tetra( a, b, c, d )
@@ -642,7 +696,6 @@ function triangleDivision(vertices){
     gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
     gl.bufferData(gl.ARRAY_BUFFER,  flatten(colors), gl.STATIC_DRAW);
     gl.vertexAttribPointer(colorLoc, 3, gl.FLOAT, false, 0, 0);
-    // gl.uniform3fv(colorLoc,colors);
 
     vBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
@@ -656,8 +709,9 @@ function render(){
 
     gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
+    // draw the triangle
     gl.drawArrays( gl.TRIANGLES, 0, positions.length );
-    //  positions = [];
+
     // start rotate
     if(!isPaused && canRotate && !canScale && !canTrans){
         rotate();
