@@ -50,7 +50,7 @@ var canYgoUp = true;
 var canTrans = false;
 
 // change color when hit corner var
-var changeColorOn = true;
+var changeColorOn = false;
 var currentColorNumber = 0;
 
 // magnet mode var
