@@ -196,7 +196,7 @@ window.onload = function init(){
     ratioLoc = gl.getUniformLocation(program, "ratio");
     // colorLoc = gl.getUniformLocation(program, "aColor");
 
-    triangleDivision(vertices);
+    createTVIdent(vertices);
 
     // set up ratio
     gl.uniform1f(ratioLoc, ratio);
@@ -229,7 +229,7 @@ window.onload = function init(){
             baseColors = colorList[4];
     
         // divide the triangle
-        triangleDivision(vertices);
+        createTVIdent(vertices);
     }
 
     // When the user toggle magnet mode
@@ -290,7 +290,7 @@ window.onload = function init(){
     // When the user select different number of sub division, change the value
     sliderRec.onchange = function(e) {
         numTimesToSubdivide = parseInt(e.target.value);
-        triangleDivision(vertices);
+        createTVIdent(vertices);
     };
 
     // update UI
@@ -357,7 +357,7 @@ window.onload = function init(){
 }
 
 // function to handle transistion of triangle
-function transTriangle(){
+function transTVIdent(){
     // check for out of bound
     var outOfBound = false;
     // check for each current location, if the location >= 1 or <= -1, it was out of canvas
@@ -542,7 +542,7 @@ function transTriangle(){
 }
 
 // Rotate shape function
-function rotate(){
+function rotateTVIdent(){
     // update theta according to direction
     theta += (direction ? -rotateSpeed: rotateSpeed);
     // update current location
@@ -612,10 +612,10 @@ function changeColor(){
     // change base color
     baseColors = colorList[currentColorNumber];
     // new triangle with new color
-    triangleDivision(vertices);
+    createTVIdent(vertices);
 }
 
-function scaleTriangle(){
+function scaleTVIdent(){
     // if scale havent reach suitable size
     if(scale[0] < scaleRatio){
         scale[0] +=0.002;
@@ -685,8 +685,8 @@ function divideTetra(a, b, c, d, count){
     }
 }
 
-// Triangle division function
-function triangleDivision(vertices){
+// create TV Ident function
+function createTVIdent(vertices){
     positions = [];
     divideTetra( vertices[0], vertices[1], vertices[2], vertices[3], numTimesToSubdivide);
 
@@ -714,15 +714,15 @@ function render(){
 
     // start rotate
     if(!isPaused && canRotate && !canScale && !canTrans){
-        rotate();
+        rotateTVIdent();
     }
     // start scaling 
     else if(!isPaused && !canRotate && canScale && !canTrans){
-        scaleTriangle();
+        scaleTVIdent();
     }
     // start transition
     else if(!isPaused && !canScale && !canRotate  && canTrans){
-        transTriangle();
+        transTVIdent();
     }
     
     // loop
