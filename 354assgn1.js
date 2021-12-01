@@ -131,9 +131,13 @@ window.onload = function init(){
     // use to keep track all the points and for collision purpose
     // only record x and y positions
     currLoc = [
+        // mid point
         [vertices[0][0],vertices[0][1]],
+        // upper point
         [vertices[1][0],vertices[1][1]],
+        // left point
         [vertices[2][0],vertices[2][1]],
+        // right point
         [vertices[3][0],vertices[3][1]]
     ];
 
