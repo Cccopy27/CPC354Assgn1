@@ -12,14 +12,39 @@ class TVIdent {
             0,0,0,1,
         ]
     }
+    getOriginalMatrix(){
+        return this.matrix;
+    }
     getRotationYMatrix(delta){
-        var c = Math.cos(delta);
-        var s = Math.sin(delta);
+        const c = Math.cos(delta);
+        const s = Math.sin(delta);
     
         return [
           c, 0, -s, 0,
           0, 1, 0, 0,
           s, 0, c, 0,
+          0, 0, 0, 1,
+        ];
+    }
+    getRotationXMatrix(delta){
+        const c = Math.cos(delta);
+        const s = Math.sin(delta);
+    
+        return [
+          1, 0, 0, 0,
+          0, c, s, 0,
+          0, -s, c, 0,
+          0, 0, 0, 1,
+        ];
+    }
+    getRotationZMatrix(delta){
+        const c = Math.cos(delta);
+        const s = Math.sin(delta);
+    
+        return [
+          c, s, 0, 0,
+          -s, c, 0, 0,
+          0, 0, 1, 0,
           0, 0, 0, 1,
         ];
     }
