@@ -1,0 +1,119 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <title>CPC354 Assgn1</title>
+
+    <script id="vertex-shader" type="x-shader/x-vertex">
+        #version 300 es
+        // aPosition for position of subTriangle
+        // aColor for color in triangle
+        in vec4 aPosition;
+        in vec3 aColor;
+        out vec4 vColor;
+
+        // ratio for ratio of rectangle to match the size of triangle
+        // without apply this ratio, triangle will out of shape
+        // uTheta for degree of rotating
+        // uScale for scaling the triangle
+        // uTrans for transition of triangle
+        uniform float ratio;
+        uniform mat4 u_matrix;
+        
+
+        void main(){
+            gl_Position = u_matrix * aPosition;
+            gl_Position.x = gl_Position.x / ratio;
+            vColor = vec4(aColor, 1.0);
+
+        }
+
+    </script>
+    
+    <script id="fragment-shader" type="x-shader/x-fragment">
+        #version 300 es
+
+        precision mediump float;
+        in vec4 vColor;
+        out vec4 fColor;
+
+        void main(){
+            fColor = vColor;
+
+        }
+    </script>
+
+    
+</head>
+<body>
+
+    <div id="wrapper">
+        <div id="dialog">
+            <div class="btn-outer">
+                <div class="btn-inner">
+                    <button class="start" onclick=startAnimation()>Start</button>
+                </div>
+
+                <div class="btn-inner">
+                    <button class="reset" onclick=resetAnimation()>Reset</button>
+                </div>
+                
+            </div>
+            <div class= "slidercontainer">
+                <span  class="slide_rec">Recursive steps :</span>  
+                <input class="slide" id="sliderRec" type="range"min="0" max="5" step="1" value="0" />
+                
+            </div>
+            <div class="slidercontainer">
+                <span  class="slide_rot">Rotation speed:</span>  
+                <input class="slide"id="sliderRot" type="range"min="0" max="5" step="1" value="0" />
+            </div>
+            <div class="slidercontainer">
+                <span  class="slide_trans">Transition speed:</span>  
+                <input class="slide"id="sliderTrans" type="range"min="0" max="5" step="1" value="0" />
+            </div>
+            <div class="dropdown">
+                <label for="colorChoice">Current colors: </label>
+                <select name="colorChoice" class="colors">
+                    <option value="redbluegreen" >Red/Green/Blue</option>
+                    <option value="whiteblackorange">White/Black/Orange</option>
+                    <option value="blackgreengrey">Black/Green/Grey</option>
+                    <option value="chocolateorangeyellow">Chocolate/Orange/Yellow</option>
+                    <option value="chocolatepinkgrey">Chocolate/Pink/Grey</option>
+
+                </select>
+            </div>
+            <div class="btn-outer">
+                <div class="btn-inner">
+                    <button class="colorChangeBtn changeColorOff">Change color when hit corner: Off</button>
+                </div>
+                <div class="btn-inner">
+                    <button class="magnet magnetOff">Magnet Mode :<br> Off</button><br/>
+                </div>
+            </div>
+            <div class="guide">
+                <span>To use magnet, Please move your mouse cursor around the triangle inside the blue window. The TV Ident will follow you :D</span><br/><br/>
+                <div style="margin-top: 30px;">
+                    <span style="position: relative; left: -10px;top: -12px;" >Prepared by:</span>
+                    <div style="display: inline-block">
+                        <span>Loh Wen Hao 146623 </span> <br/>
+                        <span>Lee Yu Xiong 147857</span>
+                    </div>
+                    
+                </div>
+            </div>
+        </div>
+        
+        <canvas id="gl-canvas" width=980px height=600px>
+        Oops ... your browser doesn't support the HTML5 canvas element
+
+    </div>
+    <script type="text/javascript" src="Common/initShaders.js"></script>
+    <script type="text/javascript" src="Common/MVnew.js"></script>
+    <script type="text/javascript" src="TVIdent.js"></script>
+    <script type="text/javascript" src="Program.js"></script>
+</canvas>
+</body>
+</html>
