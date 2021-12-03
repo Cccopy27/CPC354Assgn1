@@ -12,6 +12,8 @@ const slide_trans = document.querySelector(".slide_trans");
 const color_chose = document.querySelector(".colors");
 const toggle_color_change = document.querySelector(".colorChangeBtn");
 const magnet = document.querySelector(".magnet");
+const rotateOnly = document.querySelector(".rotateOnly");
+const rotateControl = document.querySelector(".rotateControl");
 
 // webgl
 let gl;
@@ -43,6 +45,7 @@ let isPaused = true;
 let canScale = false;
 let canTrans = false;
 let changeColorOn = false;
+let rotateMode = false;
 
 // rotation
 let theta = 0;
@@ -50,6 +53,10 @@ let direction = true;
 let count = 0;
 let rotateSpeed = 0.01;
 const oriRotateSpeed = 0.01;
+let canrotateX = false;
+let canrotateY = false;
+let canrotateZ = false;
+
 
 // scale
 let scaleAmount = 1;
@@ -92,7 +99,7 @@ const init=()=>{
 
     const vertices = [
         // middle point 
-        vec3(0.0000,  0.0000, -0.5000),
+        vec3(0.0000,  0.0000, -0.4165),
         // upper point
         vec3(0.0000,  0.4809,  0.3333),
         // left point
@@ -171,6 +178,7 @@ const init=()=>{
     TVIdentClass = new TVIdent(vertices, colorList[0]);
     
     ({colors, positions, matrixOriginal} = TVIdentClass.createTVIdent(numTimesToSubdivide));
+
     updateBuffer(colors,positions);
     gl.uniformMatrix4fv(matrixLoc, false, matrixOriginal);
 
@@ -188,6 +196,86 @@ const init=()=>{
 // Handle user input
 //...........................................................
 const handleUI = () => {
+
+    rotateControl.onclick = e => {
+        if(rotateMode){
+            if(e.target.classList.contains("rotateX")){
+                canrotateX = !canrotateX;
+                if(e.target.classList.contains("rotateXoff")){
+                    e.target.classList.remove("rotateXoff");
+                    e.target.classList.add("rotateXon");
+                }
+                else{
+                    e.target.classList.add("rotateXoff");
+                    e.target.classList.remove("rotateXon");
+                }
+            }
+            else if (e.target.classList.contains("rotateY")){
+                canrotateY = !canrotateY;
+                if(e.target.classList.contains("rotateYoff")){
+                    e.target.classList.remove("rotateYoff");
+                    e.target.classList.add("rotateYon");
+                }
+                else{
+                    e.target.classList.add("rotateYoff");
+                    e.target.classList.remove("rotateYon");
+                }
+            }
+            else if(e.target.classList.contains("rotateZ")){
+                canrotateZ = !canrotateZ;
+                if(e.target.classList.contains("rotateZoff")){
+                    e.target.classList.remove("rotateZoff");
+                    e.target.classList.add("rotateZon");
+                }
+                else{
+                    e.target.classList.add("rotateZoff");
+                    e.target.classList.remove("rotateZon");
+                }
+            }
+        }
+        
+    }
+    // when the user toggle 
+    rotateOnly.onclick = e =>{
+        rotateMode = !rotateMode;
+        if(rotateMode){
+            rotateOnly.classList.add("rotateOnlyOn");
+            rotateOnly.classList.remove("rotateOnlyOff");
+            rotateOnly.innerText = "Rotate Only : On";
+        }
+        else{
+            // reset all variables
+            theta = 0;
+            count = 0;
+            canRotate = true;
+            canScale = false;
+            canTrans = false;
+            scaleAmount = 1;
+            transX = 0;
+            transY = 0;
+            const btn = rotateControl.children;
+            for(let i = 0; i < btn.length; i++){
+                if(btn[i].classList.contains("rotateXon")){
+                    canrotateX = false;
+                    btn[i].classList.remove("rotateXon");
+                    btn[i].classList.add("rotateXoff");
+                }
+                if(btn[i].classList.contains("rotateYon")){
+                    canrotateY = false;
+                    btn[i].classList.remove("rotateYon");
+                    btn[i].classList.add("rotateYoff");
+                }
+                if(btn[i].classList.contains("rotateZon")){
+                    canrotateZ = false;
+                    btn[i].classList.remove("rotateZon");
+                    btn[i].classList.add("rotateZoff");
+                }
+            }
+            rotateOnly.classList.add("rotateOnlyOff");
+            rotateOnly.classList.remove("rotateOnlyOn");
+            rotateOnly.innerText = "Rotate Only : Off";
+        }
+    }
 
     // When the user choose color
     color_chose.onchange = e => {
@@ -583,28 +671,55 @@ const handleTranslation = () => {
 
 }
 
+const handleRotateOnly = () => {
+    canScale = false;
+    canRotate = false;
+    canTrans = false;
+    magnetModeOn = false;   
+    theta += (direction ? -rotateSpeed: rotateSpeed);
+    let matrixX = TVIdentClass.getOriginalMatrix();
+    let matrixY = TVIdentClass.getOriginalMatrix();
+    let matrixZ = TVIdentClass.getOriginalMatrix();
+
+    if(canrotateX){
+        matrixX = TVIdentClass.getRotationXMatrix(theta);
+    }
+    if(canrotateY){
+        matrixY = TVIdentClass.getRotationYMatrix(theta);
+    }
+    if(canrotateZ){
+        matrixZ = TVIdentClass.getRotationZMatrix(theta);
+    }
+    const tempMatrix = TVIdentClass.multiply(matrixY,matrixX);
+    const tempMatrix2 = TVIdentClass.multiply(matrixZ,tempMatrix);
+
+    gl.uniformMatrix4fv(matrixLoc, false, tempMatrix2);
+
+}
+
 function render(){
     // Clear the canvas
     gl.clear(gl.COLOR_BUFFER_BIT);
 
     gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-    // draw the triangle
+    // draw the TV Ident
     gl.drawArrays( gl.TRIANGLES, 0, positions.length );
-    // handleTranslation();
 
-    // start rotate
-    if(!isPaused && canRotate && !canScale && !canTrans){
-        handleRotation();
-    }
-    // start scaling 
-    else if(!isPaused && !canRotate && canScale && !canTrans){
-        handleScale();
-    }
-    // start transition
-    else if(!isPaused && !canScale && !canRotate  && canTrans){
-        handleTranslation();
-    }
+    if(!isPaused && rotateMode)
+        handleRotateOnly();
     
+    // start rotate
+    if(!isPaused && canRotate && !canScale && !canTrans)
+        handleRotation();
+    
+    // start scaling 
+    else if(!isPaused && !canRotate && canScale && !canTrans)
+        handleScale();
+    
+    // start transition
+    else if(!isPaused && !canScale && !canRotate  && canTrans)
+        handleTranslation();
+
     // loop
     requestAnimationFrame(render);
 }
