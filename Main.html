@@ -8,17 +8,15 @@
 
     <script id="vertex-shader" type="x-shader/x-vertex">
         #version 300 es
-        // aPosition for position of subTriangle
-        // aColor for color in triangle
+        // aPosition for position of TV Ident
+        // aColor for color in TV Ident
         in vec4 aPosition;
         in vec3 aColor;
         out vec4 vColor;
 
-        // ratio for ratio of rectangle to match the size of triangle
-        // without apply this ratio, triangle will out of shape
-        // uTheta for degree of rotating
-        // uScale for scaling the triangle
-        // uTrans for transition of triangle
+        // ratio for ratio of rectangle to match the size of TV Ident
+        // without apply this ratio, TV Ident will out of shape
+        // u_matrix is the animation matrix 
         uniform float ratio;
         uniform mat4 u_matrix;
         
