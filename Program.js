@@ -178,6 +178,7 @@ const init=()=>{
     TVIdentClass = new TVIdent(vertices, colorList[0]);
     
     ({colors, positions, matrixOriginal} = TVIdentClass.createTVIdent(numTimesToSubdivide));
+    console.log(positions);
 
     updateBuffer(colors,positions);
     gl.uniformMatrix4fv(matrixLoc, false, matrixOriginal);
@@ -321,7 +322,6 @@ const handleUI = () => {
         // redraw the TV Ident
         ({colors, positions, matrixOriginal} = TVIdentClass.createTVIdent(numTimesToSubdivide));
         updateBuffer(colors,positions);
-        gl.uniformMatrix4fv(matrixLoc, false, matrixOriginal);
     };
 
     // update UI for recursive steps
