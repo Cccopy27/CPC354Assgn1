@@ -10,9 +10,10 @@
         #version 300 es
         // aPosition for position of TV Ident
         // aColor for color in TV Ident
-        in vec4 aPosition;
+        in vec3 aPosition;
         in vec3 aColor;
         out vec4 vColor;
+        out vec4 xPosition;
 
         // ratio for ratio of rectangle to match the size of TV Ident
         // without apply this ratio, TV Ident will out of shape
@@ -22,7 +23,8 @@
         
 
         void main(){
-            gl_Position = u_matrix * aPosition;
+            xPosition = vec4(aPosition, 1.0);
+            gl_Position = u_matrix * xPosition;
             gl_Position.x = gl_Position.x / ratio;
             vColor = vec4(aColor, 1.0);
 
