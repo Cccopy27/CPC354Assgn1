@@ -76,7 +76,7 @@ let canYgoUp = true;
 
 
 // change color when hit corner 
-var currentColorNumber = 0;
+let currentColorNumber = 0;
 
 //matrix
 let matrixOriginal;
@@ -399,7 +399,7 @@ const handleUI = () => {
             magnet.classList.add("magnetOff");
 
             // prevent object from stuck on wall and out of bound
-            // find which triangle side is near to the wall and move reverse the triangle using mid point
+            // find which TV Ident side is near to the wall and move reverse the TV Ident using mid point
 
             // calculate latest position
             const tempLoc = calculateLatestPosition(matrixScale, matrixTrans, matrixOriginal);
@@ -489,7 +489,7 @@ const changeColor = () => {
     // change base color
     TVIdentClass.updateColor(colorList[currentColorNumber]); 
 
-    // new triangle with new color
+    // new TV Ident with new color
     let {colors, positions} = TVIdentClass.createTVIdent(numTimesToSubdivide);
     updateBuffer(colors,positions);
 }
@@ -562,7 +562,7 @@ const handleTranslation = () => {
             speedX = Math.abs(speedX);
             speedY = Math.abs(speedY);
 
-            // update the transition of TV Ident according to the distance mouse and triangle
+            // update the transition of TV Ident according to the distance mouse and TV Ident
             // the TV Ident should always move towards the mouse
             transX = distanceMagnetX >= 0 ? transX - speedX : transX + speedX;
             transY = distanceMagnetY >= 0 ? transY - speedY : transY + speedY;
@@ -600,13 +600,13 @@ const handleTranslation = () => {
                     }
                     // hit left wall
                     else if(tempLoc[i] <= -1){
-                        // special case happen for left wall and down wall, if magnet mode is on, the triangle will always out of bound when hit left and down
+                        // special case happen for left wall and down wall, if magnet mode is on, the TV Ident will always out of bound when hit left and down
 
                         // this is because the way we handle the collision, we will change the speed to either positive or negative according to how the collision happen 
 
                         // if the TV Ident hit left or down, we suppose to decease the speed mean move it towards right or up
 
-                        // if we use the normal way we handle the collision (add the speed) when magnet mode, the speed will always positive, if we minus it, the triangle will continue to move left hand or down side and it will stuck there forever
+                        // if we use the normal way we handle the collision (add the speed) when magnet mode, the speed will always positive, if we minus it, the TV Ident will continue to move left hand or down side and it will stuck there forever
 
                         // so instead of minus, we add it according to whether magnetmode on or off.
                         // transX -= speedX*2;
@@ -644,9 +644,9 @@ const handleTranslation = () => {
         changeDirection = false;
 
         // get random number to implement random direction 
-        // if number == 1, the triangle should move right and up
+        // if number == 1, the TV Ident should move right and up
         // if number == 2 , move down and left
-        var randomNumber = Math.floor(Math.random() * 2) + 1;
+        const randomNumber = Math.floor(Math.random() * 2) + 1;
         
         // reset both speed to non-negative
         speedX = Math.abs(speedX);
